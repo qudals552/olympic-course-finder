@@ -1,0 +1,19 @@
+{
+  "name": "olympic-course-finder",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "data": "python -I ../src/build_courses.py && node -e \"require('fs').copyFileSync('../data/courses.json','public/courses.json')\"",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

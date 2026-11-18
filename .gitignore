@@ -1,0 +1,20 @@
+# 빌드 결과·설치 폴더
+node_modules/
+dist/
+site/dist/
+기획서/node_modules/
+
+# 공개 저장소에 올리지 않는 작업 문서 (대회 제출용 기획서와 진행 메모)
+기획.md
+팀운영.md
+기획서/
+공고문/
+
+# 운영체제·편집기 파일
+.DS_Store
+Thumbs.db
+*.log
+
+# 파이썬 캐시
+__pycache__/
+*.pyc
