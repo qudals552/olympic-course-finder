@@ -32,6 +32,7 @@ export const LOGO = `<svg aria-hidden="true" width="36" height="36" viewBox="0 0
 
 export const ICON = {
   x: wrap('<path d="M6 6l12 12"/><path d="M18 6 6 18"/>', 14),
+  filter: wrap('<path d="M4 7h9"/><path d="M17 7h3"/><circle cx="15" cy="7" r="2"/><path d="M4 17h3"/><path d="M11 17h9"/><circle cx="9" cy="17" r="2"/>', 16),
   check: wrap('<path d="m5 12 5 5 9-10"/>', 14),
   down: wrap('<path d="m6 9 6 6 6-6"/>', 12),
   heart: wrap('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>', 20),

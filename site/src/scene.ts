@@ -31,7 +31,7 @@ export const SCENES: Scene[] = [
   },
   {
     id: "tennis", label: "테니스", category: "라켓", caption: "코트 레인을 골라 센터별 강좌를 모아 보세요",
-    actor: `${open}<ellipse class="shadow" cx="62" cy="55" rx="12" ry="3"/><g class="a-ball-x"><g class="a-ball-y"><circle class="ball" cx="62" cy="44" r="8"/><path class="seam" d="M55 41c4 3 10 3 14 0M55 47c4-3 10-3 14 0"/></g></g></svg>`,
+    actor: `${open}<g class="a-ball-x"><ellipse class="shadow" cx="62" cy="54" rx="11" ry="3"/><g class="a-ball-y"><circle class="ball" cx="62" cy="44" r="8"/><path class="seam" d="M55 41c4 3 10 3 14 0M55 47c4-3 10-3 14 0"/></g></g></svg>`,
   },
 ];
 

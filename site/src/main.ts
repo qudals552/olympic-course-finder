@@ -42,12 +42,6 @@ const EXAMPLES = ["퇴근 후 주 2회 초급 수영", "주말에 우리 아이 
 const PRICE_STEPS = [50000, 80000, 100000, 150000, 200000];
 const SAVE_KEY = "olympic-course-finder.saved";
 const SCENE_KEY = "olympic-course-finder.scene";
-const CENTER_REGION: Record<string, string> = {
-  올림픽수영장: "서울 송파 · 올림픽공원",
-  올림픽공원스포츠센터: "서울 송파 · 올림픽공원",
-  분당올림픽스포츠센터: "경기 성남 · 분당",
-  일산올림픽스포츠센터: "경기 고양 · 일산",
-};
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------- 작은 도우미 ----------
@@ -75,6 +69,7 @@ let query: Query = decodeQuery(location.hash);
 let shown = PAGE;
 let view: "cards" | "table" = "cards";
 let openPill: string | null = null;
+let skipAnim = false; // '더 보기'로 이어 붙일 때는 카드가 다시 나타나는 효과를 생략
 let lastNote = "";
 let saved: string[] = loadSaved();
 let savedOnce = false;
@@ -318,7 +313,7 @@ const PILLS: PillDef[] = [
     body: () => [el("h3", {}, "한 달 수강료"), el("div", { class: "chips" }, ...PRICE_STEPS.map((p) => chip(priceLabel(p), query.maxPrice === p, () => update({ maxPrice: query.maxPrice === p ? null : p }))))],
   },
   {
-    id: "more", title: "더 보기", value: () => "", on: () => !query.recentOnly || query.includePrivate || query.includePaused || query.sort !== emptyQuery().sort,
+    id: "more", title: "함께 보기", value: () => "", on: () => !query.recentOnly || query.includePrivate || query.includePaused,
     body: () => {
       const check = (label: string, on: boolean, set: (v: boolean) => void) => {
         const i = el("input", { type: "checkbox" }) as HTMLInputElement;
@@ -327,9 +322,7 @@ const PILLS: PillDef[] = [
         return el("label", { class: "check" }, i, label);
       };
       return [
-        el("h3", {}, "정렬"),
-        el("div", { class: "chips" }, ...([["pick", "추천순"], ["time", "시작 시간순"], ["price", "수강료 낮은순"], ["center", "센터순"], ["saved", "담은 강좌 먼저"]] as const).map(([k, l]) => chip(l, query.sort === k, () => update({ sort: k })))),
-        el("h3", { style: "margin-top: 14px" }, "함께 보기"),
+        el("h3", {}, "함께 보기"),
         check(`오래된 강좌도 보기 (${data.recentFrom.replace("-", ".")} 이전 등록)`, !query.recentOnly, (v) => update({ recentOnly: !v })),
         check("개인·2인 레슨도 보기", query.includePrivate, (v) => update({ includePrivate: v })),
         check("일시중지 강좌도 보기", query.includePaused, (v) => update({ includePaused: v })),
@@ -338,17 +331,29 @@ const PILLS: PillDef[] = [
   },
 ];
 
+/** 자주 쓰는 4개는 바로 보이고, 나머지는 '필터 더 보기' 한 곳에 모음(알약이 너무 많아 헷갈리지 않게) */
+const MAIN_IDS = ["sport", "center", "days", "times"];
+const MORE_IDS = ["level", "week", "target", "price", "more"];
+const PILL_ORDER = ["filters", ...MAIN_IDS]; // 필터 버튼을 맨 앞에 둬서 휴대폰에서 옆으로 밀려 가려지지 않게
+const pillById = (id: string) => PILLS.find((p) => p.id === id)!;
+const moreCount = () => MORE_IDS.filter((id) => pillById(id).on()).length;
+
 function renderPills() {
   $("#pills").replaceChildren(
-    ...PILLS.map((p) => {
-      const on = p.on();
-      const b = el("button", { type: "button", class: `pill${on ? " on" : ""}`, "aria-expanded": String(openPill === p.id), "aria-controls": "popover" });
-      if (on) b.append(svg(ICON.check));
-      const v = p.value();
-      b.append(v ? `${p.title} · ${v}` : p.title, svg(ICON.down));
+    ...PILL_ORDER.map((id) => {
+      const isMore = id === "filters";
+      const p = isMore ? null : pillById(id);
+      const n = isMore ? moreCount() : 0;
+      const on = isMore ? n > 0 : p!.on();
+      const b = el("button", { type: "button", class: `pill${on ? " on" : ""}${isMore ? " pill-more" : ""}`, "aria-expanded": String(openPill === id), "aria-controls": "popover" });
+      if (isMore) b.append(svg(ICON.filter));
+      else if (on) b.append(svg(ICON.check));
+      const v = isMore ? (n ? String(n) : "") : p!.value();
+      const title = isMore ? "필터" : p!.title;
+      b.append(v ? `${title} · ${v}` : title, svg(ICON.down));
       b.addEventListener("click", (e) => {
         e.stopPropagation();
-        openPill = openPill === p.id ? null : p.id;
+        openPill = openPill === id ? null : id;
         renderPills();
         renderPopover();
         if (openPill) $("#popover").querySelector<HTMLElement>("button, input")?.focus();
@@ -360,13 +365,20 @@ function renderPills() {
 
 function renderPopover() {
   const pop = $("#popover");
-  const p = PILLS.find((x) => x.id === openPill);
-  pop.hidden = !p;
-  if (!p) return pop.replaceChildren();
-  const done = el("button", { type: "button", class: "btn-dark" }, "닫기");
-  done.addEventListener("click", closePopover);
-  pop.replaceChildren(...p.body(), el("div", { class: "popover-actions" }, done));
-  pop.setAttribute("aria-label", `${p.title} 고르기`);
+  const isMore = openPill === "filters";
+  const p = isMore ? null : PILLS.find((x) => x.id === openPill);
+  const open = isMore || !!p;
+  pop.hidden = !open;
+  $("#pop-backdrop").hidden = !open;
+  document.body.classList.toggle("pop-open", open);
+  if (!open) return pop.replaceChildren();
+  const top = pop.scrollTop; // 칩을 눌러 다시 그려도 보던 자리를 유지
+  const done = el("button", { type: "button", class: "btn-dark" }, `강좌 ${find(query).length.toLocaleString("ko-KR")}개 보기`);
+  done.addEventListener("click", () => { closePopover(); revealResults(); });
+  const body = isMore ? MORE_IDS.map((id) => el("section", { class: "pop-sec" }, ...pillById(id).body())) : p!.body();
+  pop.replaceChildren(...body, el("div", { class: "popover-actions" }, done));
+  pop.setAttribute("aria-label", `${isMore ? "필터 더 보기" : p!.title} 고르기`);
+  pop.scrollTop = top;
 }
 
 function closePopover() {
@@ -375,7 +387,7 @@ function closePopover() {
   openPill = null;
   renderPills();
   renderPopover();
-  ($("#pills").children[PILLS.findIndex((p) => p.id === id)] as HTMLElement | undefined)?.focus();
+  ($("#pills").children[PILL_ORDER.indexOf(id)] as HTMLElement | undefined)?.focus();
 }
 
 // ---------- 카드 ----------
@@ -548,10 +560,9 @@ function renderResults() {
   const [ry, rm] = data.recentFrom.split("-");
   const cn = $("#count-note");
   cn.hidden = filtered;
-  cn.textContent = `${ry}년 ${Number(rm)}월 이후 등록·갱신된 그룹 강좌예요. 전체 ${data.courses.length.toLocaleString("ko-KR")}개는 '더 보기'에서 함께 볼 수 있어요.`;
+  cn.textContent = `${ry}년 ${Number(rm)}월 이후 등록·갱신된 그룹 강좌예요. 전체 ${data.courses.length.toLocaleString("ko-KR")}개는 위쪽 ‘필터 → 함께 보기’에서 함께 볼 수 있어요.`;
   $("#list").removeAttribute("aria-busy");
   $("#discover").hidden = filtered;
-  $("#centers").hidden = filtered;
   if (!filtered) renderDiscover(res);
 
   // 조건 완화 제안
@@ -573,7 +584,9 @@ function renderResults() {
   table.hidden = view !== "table";
   $(".result-body").classList.toggle("table-mode", view === "table");
   if (view === "cards") {
-    list.replaceChildren(...res.slice(0, shown).map(card));
+    list.classList.toggle("no-anim", skipAnim);
+    skipAnim = false;
+    list.replaceChildren(...res.slice(0, shown).map((c, i) => { const li = card(c); li.style.setProperty("--i", String(i % PAGE)); return li; }));
     if (!n) list.append(el("li", { class: "empty" }, el("p", { class: "strong" }, "조건에 맞는 강좌가 없어요."), el("p", { class: "note" }, "위의 제안을 누르거나, 조건 토큰의 ×로 조건을 하나 지워 보세요.")));
     more.hidden = n <= shown;
     more.textContent = `${Math.min(PAGE, n - shown)}개 더 보기 (남은 강좌 ${(n - shown).toLocaleString("ko-KR")}개)`;
@@ -621,21 +634,6 @@ function renderDiscover(res: Course[]) {
       el("span", { class: "k" }, k), el("span", { class: "n" }, `강좌 ${cnt.toLocaleString("ko-KR")}개`));
     b.addEventListener("click", () => { update({ categories: [k] }, { push: true }); revealResults(shownMessage(k)); });
     return b;
-  }));
-
-  $("#center-cards").replaceChildren(...Object.keys(CENTER_SHORT).map((center) => {
-    const mine = res.filter((c) => c.center === center);
-    const cats = new Map<string, number>();
-    for (const c of mine) cats.set(c.category, (cats.get(c.category) ?? 0) + 1);
-    const top = [...cats.entries()].filter(([k]) => k !== "기타").sort((a, b) => b[1] - a[1]).slice(0, 3);
-    const btn = el("button", { type: "button", class: "center-card" },
-      el("span", { class: "cc-region" }, CENTER_REGION[center]),
-      el("span", { class: "cc-name" }, center),
-      el("span", { class: "cc-count" }, el("span", { class: "num" }, mine.length.toLocaleString("ko-KR")), "개 강좌"),
-      el("span", { class: "cc-tags" }, ...top.map(([k]) => el("span", { class: `cc-tag cat-${catKey(k)}` }, svg(sportIcon(k, 14)), k))),
-      el("span", { class: "cc-go" }, "이 센터 강좌 보기", svg(ICON.arrow)));
-    btn.addEventListener("click", () => { update({ centers: [center] }, { push: true }); revealResults(shownMessage(CENTER_SHORT[center] ?? center)); });
-    return btn;
   }));
 }
 
@@ -954,14 +952,14 @@ function syncHearts() {
   if (ph && cur) ph.setAttribute("aria-pressed", String(saved.includes(cur.id)));
 }
 
-/** 결과 머리말의 '담은 강좌 먼저' 버튼: 담은 개수를 보여 주고, 누르면 정렬을 바꿈 */
+/** 결과 머리말의 정렬 선택: '담은 강좌 먼저'에는 담은 개수를 붙여 보여 줌 */
 function syncSortSaved() {
-  const b = document.querySelector<HTMLButtonElement>("#sort-saved");
-  if (!b) return;
+  const sel = document.querySelector<HTMLSelectElement>("#sort-select");
+  if (!sel) return;
   const n = savedCourses().length;
-  b.hidden = n === 0 && query.sort !== "saved";
-  b.setAttribute("aria-pressed", String(query.sort === "saved"));
-  $("#sort-saved-label").textContent = `담은 강좌 먼저 · ${n}개`;
+  const opt = sel.querySelector<HTMLOptionElement>('option[value="saved"]');
+  if (opt) opt.textContent = n ? `담은 강좌 먼저 (${n}개)` : "담은 강좌 먼저";
+  sel.value = query.sort;
 }
 
 function pickShowcase(sc: Scene): Course[] {
@@ -1033,15 +1031,15 @@ function renderHero() {
   const lanes = Object.keys(CENTER_SHORT);
   const all = find({ ...emptyQuery() });
   const setLane = (i: number) => art.style.setProperty("--lane", String(i));
-  setLane(0);
+  setLane(Math.floor(Math.random() * lanes.length)); // 캐릭터가 서 있는 레인도 새로고침마다 무작위
   $("#lanes").replaceChildren(...lanes.map((center, i) => {
     const n = all.filter((c) => c.center === center).length;
     const b = el("button", { type: "button", class: "lane", "aria-label": `${CENTER_SHORT[center]} 강좌 ${n}개 보기` },
       el("span", { class: "lane-name" }, CENTER_SHORT[center] ?? center),
       el("span", { class: "lane-n num" }, `${n.toLocaleString("ko-KR")}개`),
       el("span", { class: "lane-go", "aria-hidden": "true" }, svg(ICON.arrow)));
-    b.addEventListener("pointerenter", () => setLane(i));
-    b.addEventListener("focus", () => setLane(i));
+    // 마우스를 올릴 때 그림이 따라다니면 어수선하므로, 키보드로 옮길 때와 누를 때만 이동
+    b.addEventListener("focus", () => { if (b.matches(":focus-visible")) setLane(i); });
     b.addEventListener("click", () => {
       setLane(i);
       // 그림이 그 레인으로 헤엄쳐 가는 것을 잠깐 보여 준 뒤 이동(움직임 줄이기 설정이면 바로)
@@ -1115,6 +1113,7 @@ async function init() {
   $("#more").addEventListener("click", () => {
     const from = shown;
     shown += PAGE;
+    skipAnim = true;
     renderResults();
     ($("#list").children[from] as HTMLElement | undefined)?.focus();
   });
@@ -1180,6 +1179,9 @@ async function init() {
           openPill = "center"; renderPills(); renderPopover();
           ($("#popover").querySelector("button") as HTMLElement | null)?.focus();
         }
+      } else if (id === "centers") {
+        // 센터 고르기는 첫 화면의 센터 레인이 맡음
+        goTo("hero-art");
       } else {
         goTo(id);
       }
@@ -1210,10 +1212,10 @@ async function init() {
 
   rotatePlaceholder();
   renderHero();
-  $("#sort-saved").addEventListener("click", () => {
-    update({ sort: query.sort === "saved" ? "pick" : "saved" });
-    toast(query.sort === "saved" ? "담은 강좌를 맨 앞에 보여 드려요" : "추천순으로 돌아갔어요");
+  $<HTMLSelectElement>("#sort-select").addEventListener("change", (e) => {
+    update({ sort: (e.target as HTMLSelectElement).value as Query["sort"] });
   });
+  $("#pop-backdrop").addEventListener("click", () => closePopover());
   render();
   // 다 그린 다음 수영 장면을 움직임 (그리는 동안 시작하면 끊겨 보임)
   setTimeout(() => document.querySelector(".hero-art")?.classList.add("run"), 700);

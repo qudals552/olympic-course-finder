@@ -403,7 +403,7 @@ button { cursor: pointer; }
 .scene-run .a-arm-a { transform: rotate(-40deg); } .scene-run .a-arm-b { transform: rotate(40deg); }
 .scene-run .a-leg-a { transform: rotate(-35deg); } .scene-run .a-leg-b { transform: rotate(35deg); }
 @media (prefers-reduced-motion: no-preference) {
-  .scene-swim .a-arm-a, .scene-swim .a-arm-b, .scene-swim .a-leg, .scene-swim .a-bob, .actor .drop, .actor .a-ball-x, .actor .a-ball-y, .actor .shadow, .lane::before { will-change: transform; }
+  .actor { will-change: transform; }
   /* 데이터를 다 그린 뒤 .run이 붙으면 움직임 시작(그리는 동안 시작하면 끊겨 보임) */
   .run .lanes li + li .lane::before { animation: lane-flow 1s linear infinite; }
   .run.scene-swim .a-bob { animation: sw-bob 3.2s ease-in-out infinite; }
@@ -453,8 +453,9 @@ button { cursor: pointer; }
 .pick-go:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 .pick-tag { font-size: 13px; font-weight: 800; color: var(--blue-ink); }
 .pick-time { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
-.pick-title { font-size: 16px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
-.pick-meta { font-size: 14px; color: var(--muted); line-height: 1.4; }
+.pick-title { font-size: 16px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; /* 제목이 1줄이든 2줄이든 카드 높이가 같게 2줄 자리를 항상 잡고, 더 길면 줄임 */ min-height: 2.7em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.pick-meta { font-size: 14px; color: var(--muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick-tag, .pick-time { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pick-cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 14px; font-weight: 800; color: var(--blue-ink); }
 .pick .heart { position: absolute; right: 8px; top: 8px; }
 @media (prefers-reduced-motion: no-preference) { .pick-go.swap { animation: pick-in .35s ease-out; } @keyframes pick-in { from { opacity: 0; transform: translateY(6px); } } }
@@ -693,3 +694,42 @@ body:has(dialog[open]) { overflow: hidden; }
 .copy-btn svg { color: var(--muted); }
 .sv-share { display: flex; gap: 10px; flex-wrap: wrap; }
 .sv-share .btn-primary, .sv-share .btn-secondary { flex: 1 1 140px; min-height: 48px; }
+
+/* '담은 강좌 먼저' 버튼은 share-btn의 휴대폰용 글자 숨김 규칙을 받지 않게 함 */
+@media (max-width: 760px) { .sort-saved span { display: inline; } .sort-saved::after { content: none; } .sort-saved { padding: 0 12px; } }
+
+/* ---- 필터 정리: 알약 5개 + '필터 더 보기' 시트 ---- */
+.popover { max-height: min(72vh, 640px); overflow: auto; overscroll-behavior: contain; }
+.pop-sec + .pop-sec { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.pop-backdrop { position: fixed; inset: 0; z-index: 4; background: transparent; }
+.pill-more svg:first-child { color: currentColor; }
+.sort-box select { min-width: 176px; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 0 12px; font: inherit; font-size: 14px; }
+.sort-box select:focus-visible { outline: 3px solid var(--blue-line); outline-offset: 1px; }
+@media (max-width: 760px) {
+  /* 휴대폰: 필터 창은 아래에서 올라오는 시트. 뒤는 어둡게, 맨 아래 버튼으로 결과 개수를 보며 닫음 */
+  body.pop-open { overflow: hidden; }
+  body.pop-open .filter-bar { z-index: 40; backdrop-filter: none; }
+  .pop-backdrop { background: rgba(20, 24, 30, 0.45); z-index: 1; }
+  .popover { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%; max-height: 80vh; border-radius: 24px 24px 0 0; z-index: 2; padding: 22px 16px 0; border-bottom: 0; }
+  .popover::before { content: ""; position: absolute; left: 50%; top: 8px; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--line); }
+  .popover-actions { position: sticky; bottom: 0; margin: 12px -16px 0; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
+  .popover-actions .btn-dark { width: 100%; }
+}
+@media (max-width: 760px) and (prefers-reduced-motion: no-preference) { .popover:not([hidden]) { animation: sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); } }
+
+/* ---- 손에 닿는 느낌: 카드 등장, 살짝 뜨는 호버, 누를 때 줄어듦 ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .cards > .card { animation: card-in 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(min(var(--i, 0), 8) * 45ms); }
+  .cards.no-anim > .card { animation: none; }
+  @keyframes card-in { from { opacity: 0; transform: translateY(14px); } }
+  .card, .starter-tile, .lane, .pill, .chip, .quick, .btn-primary, .pick-go { transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease; }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-up); }
+  .starter-tile:hover { transform: translateY(-2px); }
+  .pill:active, .chip:active, .quick:active, .starter-tile:active, .btn-primary:active, .btn-dark:active, .lane:active { transform: scale(0.97); }
+}
+
+/* 휴대폰: 종목 타일을 작게 해서 첫 목록이 더 빨리 보이게 */
+@media (max-width: 760px) {
+  .starter-tile { min-width: 116px; padding: 12px; gap: 4px; }
+  .starter-tile .st-ico { transform: scale(0.85); transform-origin: left top; }
+}
