@@ -54,6 +54,12 @@ describe("search 정렬", () => {
     expect(search(data, { ...emptyQuery(), sort: "time" }).map((x) => x.id)).toEqual(["b", "a"]);
     expect(search(data, { ...emptyQuery(), sort: "price" }).map((x) => x.id)).toEqual(["a", "b"]);
   });
+  it("담은 강좌 먼저: 나중에 담은 것이 앞, 안 담은 강좌는 추천순", () => {
+    const d = { courses: [c({ id: "a", start: "20:00" }), c({ id: "b", start: "19:00" }), c({ id: "x", start: "18:00" }), c({ id: "y", start: "17:30" })] } as Dataset;
+    const ids = search(d, { ...emptyQuery(), sort: "saved" }, ["a", "b"]).map((z) => z.id);
+    expect(ids).toEqual(["b", "a", "y", "x"]);
+    expect(search(d, { ...emptyQuery(), sort: "saved" }).map((z) => z.id)).toEqual(["y", "x", "b", "a"]);
+  });
   it("기본(추천순)은 이른 새벽·자유 이용·극단 정원을 뒤로 보냄", () => {
     const d = { courses: [
       c({ id: "dawn", start: "06:00" }),

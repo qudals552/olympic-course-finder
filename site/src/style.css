@@ -358,61 +358,120 @@ button { cursor: pointer; }
 .hero-title { margin: 0; font-size: clamp(30px, 4.2vw, 48px); line-height: 1.18; font-weight: 900; letter-spacing: -0.04em; }
 .hero-title mark { background: linear-gradient(transparent 58%, var(--lime) 58%); color: inherit; padding: 0 2px; }
 .search-ico { color: var(--muted); margin-left: 4px; flex: none; }
-.hero-art { flex: 1 1 360px; position: relative; min-height: 440px; border-radius: 28px; overflow: hidden; background: #2f5bea; }
-/* 수영장 장면: 수영하는 사람은 제자리에서 팔을 젓고, 레인 줄과 물결이 한 방향으로 흘러 앞으로 나가는 느낌을 줌 */
-.pool { position: absolute; inset: 0; background: linear-gradient(165deg, #3f70ff 0%, #2a56dc 55%, #1f45c8 100%); }
-.pool-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.ln { stroke-dasharray: 14 12; opacity: .75; }
-.sw-body, .sw-head { fill: #fff; }
-.sw-cap { fill: #ddf57a; }
-.sw-leg, .sw-arm { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; }
-.sw-arm-b { stroke: #ddf57a; }
-.sw-leg-b { opacity: .75; }
-.sw-drop { fill: #fff; opacity: .8; }
-.sw-water { fill: #1f45c8; fill-opacity: .58; }
-.rp { opacity: .3; }
-.rp2 { opacity: .2; }
-.sw-arm { transform-box: view-box; transform-origin: 232px 154px; }
-.sw-leg { transform-box: view-box; transform-origin: 184px 160px; }
-.sw-bob { transform-box: view-box; transform-origin: 212px 158px; }
-/* 첫 화면에서 데이터를 읽고 그리는 동안은 움직이지 않다가(끊겨 보임), 다 그린 뒤 .run이 붙으면 시작함 */
-@media (prefers-reduced-motion: no-preference) {
-  .sw-arm, .sw-leg, .sw-bob, .sw-water, .rp, .sw-drop { will-change: transform; }
-  .run .ln { animation: ln-flow 1s linear infinite; }
-  .run .rp1 { animation: rp-flow 3.2s linear infinite; }
-  .run .rp2 { animation: rp-flow 4.8s linear infinite; }
-  .run .sw-water { animation: water-sway 3.2s ease-in-out infinite; }
-  .run .sw-bob { animation: sw-bob 3.2s ease-in-out infinite; }
-  .run .sw-arm-a { animation: sw-arm 1.8s linear infinite; }
-  .run .sw-arm-b { animation: sw-arm 1.8s linear infinite -0.9s; }
-  .run .sw-leg-a { animation: sw-kick .5s ease-in-out infinite alternate; }
-  .run .sw-leg-b { animation: sw-kick .5s ease-in-out infinite alternate-reverse; }
-  .run .sw-drop-a { animation: sw-drop 1.8s ease-in-out infinite; }
-  .run .sw-drop-b { animation: sw-drop 1.8s ease-in-out infinite .9s; }
+/* 첫 화면 오른쪽 장면: 4개 레인 = 4개 센터(누르면 그 센터 강좌), 아래는 실제 강좌 한 장. 종목 장면은 새로고침마다 바뀜 */
+.hero-art {
+  --a-bg1: #3f70ff; --a-bg2: #1f45c8; --a-line: #ddf57a; --row: 58px;
+  flex: 1 1 360px; align-self: flex-start; position: relative; border-radius: 28px; overflow: hidden; color: #fff;
+  background: linear-gradient(165deg, var(--a-bg1) 0%, var(--a-bg2) 100%);
+  padding: 16px 14px 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0;
 }
-@keyframes ln-flow { to { stroke-dashoffset: -26; } }
-@keyframes rp-flow { to { transform: translateX(100px); } }
-@keyframes water-sway { 50% { transform: translateY(2.5px); } }
-@keyframes sw-bob { 50% { transform: translateY(-4px) rotate(-2deg); } }
-@keyframes sw-arm { to { transform: rotate(360deg); } }
+.scene-skate { --a-bg1: #2f86c4; --a-bg2: #1b5a91; --a-line: #e6f6ff; }
+.scene-run { --a-bg1: #d4552f; --a-bg2: #a23a1b; --a-line: #ffe3d2; }
+.scene-tennis { --a-bg1: #27934f; --a-bg2: #15653a; --a-line: #f4fbd0; }
+.art-cap { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; }
+.lanes-wrap { position: relative; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.1); }
+.lanes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lane { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; height: var(--row); padding: 0 14px; border: 0; border-radius: 0; background: transparent; color: #fff; font: inherit; text-align: left; cursor: pointer; overflow: hidden; }
+.lanes li + li .lane::before { content: ""; position: absolute; left: 0; top: 0; width: 200%; height: 3px; background: repeating-linear-gradient(90deg, var(--a-line) 0 14px, transparent 14px 26px); opacity: .7; }
+.lane:hover, .lane:focus-visible, .lane.on { background: rgba(255,255,255,.16); }
+.lane:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
+.lane-name { position: relative; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+.lane-n { position: relative; font-size: 14px; font-weight: 700; opacity: .92; white-space: nowrap; }
+.lane-go { position: relative; opacity: .55; transition: opacity .15s; flex: none; }
+.lane:hover .lane-go, .lane:focus-visible .lane-go { opacity: 1; }
+@media (hover: none) { .lane-go { opacity: .9; } }
+.actor { position: absolute; right: 8px; top: 0; width: 112px; height: var(--row); pointer-events: none; transform: translateY(calc(var(--lane, 0) * var(--row))); }
+@media (prefers-reduced-motion: no-preference) { .actor { transition: transform .5s cubic-bezier(.3,.7,.2,1); } }
+.actor svg { display: block; width: 112px; height: 58px; overflow: visible; }
+.actor .limb { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; }
+.actor .limb.thin { stroke-width: 3; }
+.actor .lime .limb { stroke: #ddf57a; }
+.actor .fill { fill: #fff; }
+.actor .cap { fill: #ddf57a; }
+.actor .drop { fill: #fff; opacity: .8; }
+.actor .ball { fill: #ddf57a; }
+.actor .seam { fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; opacity: .85; }
+.actor .shadow { fill: #000; opacity: .22; }
+/* 움직임이 없을 때(또는 줄이기 설정) 자연스러운 정지 자세 */
+.actor .a-arm, .actor .a-fore, .actor .a-leg, .actor .a-bob, .actor .a-ball-x, .actor .a-ball-y { transform-box: view-box; }
+.scene-swim .a-arm { transform-origin: 86px 30px; } .scene-swim .a-fore { transform-origin: 86px 16px; } .scene-swim .a-leg { transform-origin: 38px 36px; } .scene-swim .a-bob { transform-origin: 66px 34px; }
+.scene-swim .a-arm-a { transform: rotate(-60deg); } .scene-swim .a-arm-b { transform: rotate(120deg); }
+.scene-skate .a-arm { transform-origin: 74px 22px; } .scene-skate .a-leg { transform-origin: 56px 36px; }
+.scene-skate .a-arm-a { transform: rotate(-25deg); } .scene-skate .a-arm-b { transform: rotate(35deg); }
+.scene-skate .a-leg-a { transform: rotate(-18deg); } .scene-skate .a-leg-b { transform: rotate(18deg); }
+.scene-run .a-arm { transform-origin: 60px 22px; } .scene-run .a-leg { transform-origin: 56px 38px; }
+.scene-run .a-arm-a { transform: rotate(-40deg); } .scene-run .a-arm-b { transform: rotate(40deg); }
+.scene-run .a-leg-a { transform: rotate(-35deg); } .scene-run .a-leg-b { transform: rotate(35deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .scene-swim .a-arm-a, .scene-swim .a-arm-b, .scene-swim .a-leg, .scene-swim .a-bob, .actor .drop, .actor .a-ball-x, .actor .a-ball-y, .actor .shadow, .lane::before { will-change: transform; }
+  /* 데이터를 다 그린 뒤 .run이 붙으면 움직임 시작(그리는 동안 시작하면 끊겨 보임) */
+  .run .lanes li + li .lane::before { animation: lane-flow 1s linear infinite; }
+  .run.scene-swim .a-bob { animation: sw-bob 3.2s ease-in-out infinite; }
+  .run.scene-swim .a-arm-a { animation: sw-arm 1.8s linear infinite; }
+  .run.scene-swim .a-arm-b { animation: sw-arm 1.8s linear infinite -0.9s; }
+  .run.scene-swim .a-arm-a .a-fore { animation: sw-fore 1.8s ease-in-out infinite; }
+  .run.scene-swim .a-arm-b .a-fore { animation: sw-fore 1.8s ease-in-out infinite -0.9s; }
+  .run.scene-swim .a-leg-a { animation: sw-kick .5s ease-in-out infinite alternate; }
+  .run.scene-swim .a-leg-b { animation: sw-kick .5s ease-in-out infinite alternate-reverse; }
+  .run.scene-swim .d1 { animation: sw-drop 1.8s ease-in-out infinite; }
+  .run.scene-swim .d2 { animation: sw-drop 1.8s ease-in-out infinite .9s; }
+  .run.scene-skate .a-bob { animation: sk-bob 1.6s ease-in-out infinite; }
+  .run.scene-skate .a-leg-a { animation: sk-leg 1.6s ease-in-out infinite alternate; }
+  .run.scene-skate .a-leg-b { animation: sk-leg 1.6s ease-in-out infinite alternate-reverse; }
+  .run.scene-skate .a-arm-a { animation: sk-arm 1.6s ease-in-out infinite alternate; }
+  .run.scene-skate .a-arm-b { animation: sk-arm 1.6s ease-in-out infinite alternate-reverse; }
+  .run.scene-run .a-bob { animation: rn-bob .42s ease-in-out infinite alternate; }
+  .run.scene-run .a-leg-a { animation: rn-leg .42s ease-in-out infinite alternate; }
+  .run.scene-run .a-leg-b { animation: rn-leg .42s ease-in-out infinite alternate-reverse; }
+  .run.scene-run .a-arm-a { animation: rn-arm .42s ease-in-out infinite alternate; }
+  .run.scene-run .a-arm-b { animation: rn-arm .42s ease-in-out infinite alternate-reverse; }
+  .run.scene-tennis .a-ball-x { animation: tn-x 1.4s ease-in-out infinite alternate; }
+  .run.scene-tennis .a-ball-y { animation: tn-y .7s linear infinite; }
+  .run.scene-tennis .shadow { animation: tn-shadow .7s linear infinite; transform-box: fill-box; transform-origin: center; }
+}
+.scene-tennis .a-ball-x { transform-origin: 62px 44px; }
+@keyframes lane-flow { to { transform: translateX(-26px); } }
+@keyframes sw-bob { 50% { transform: translateY(-3px) rotate(-2deg); } }
+/* 팔: 앞으로 뻗어 물을 잡고(90도) 아래·뒤로 당긴 뒤(270도) 물 밖으로 팔꿈치를 꺾어 앞으로 돌아옴(450도) */
+@keyframes sw-arm { from { transform: rotate(90deg); } to { transform: rotate(450deg); } }
+@keyframes sw-fore { 0%, 48% { transform: rotate(0deg); } 66%, 84% { transform: rotate(-80deg); } 100% { transform: rotate(0deg); } }
 @keyframes sw-kick { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
 @keyframes sw-drop { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: .85; } 100% { transform: translate(-16px, -10px); opacity: 0; } }
-.fc { position: absolute; background: var(--surface); color: var(--ink); border-radius: 16px; padding: 10px 14px; box-shadow: 0 10px 28px rgba(0,0,0,.18); display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
-.fc small { color: var(--muted); font-size: 12px; }
-.fc .num { font-size: 22px; font-weight: 700; }
-.fc1 { right: 16px; top: 18px; } .fc2 { left: 16px; top: 54%; } .fc3 { right: 20px; top: 68%; flex-direction: row; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--lime); color: #1a1f26; }
-.fc3 small { flex-basis: 100%; color: #1a1f26; }
-.fc-lv { font-weight: 800; color: var(--blue-ink); }
-.stats { position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.stats div { background: rgba(255,255,255,.14); backdrop-filter: blur(6px); border-radius: 14px; padding: 8px 10px; color: #fff; display: flex; flex-direction: column; }
-.stats .num { font-size: 22px; font-weight: 700; } .stats small { font-size: 12px; opacity: .9; }
+@keyframes sk-bob { 50% { transform: translateY(2px); } }
+@keyframes sk-leg { from { transform: rotate(-24deg); } to { transform: rotate(24deg); } }
+@keyframes sk-arm { from { transform: rotate(-30deg); } to { transform: rotate(40deg); } }
+@keyframes rn-bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+@keyframes rn-leg { from { transform: rotate(-42deg); } to { transform: rotate(42deg); } }
+@keyframes rn-arm { from { transform: rotate(-48deg); } to { transform: rotate(48deg); } }
+@keyframes tn-x { from { transform: translateX(-40px); } to { transform: translateX(40px); } }
+@keyframes tn-y { 0% { transform: translateY(0); animation-timing-function: cubic-bezier(.2,.6,.4,1); } 50% { transform: translateY(-30px); animation-timing-function: cubic-bezier(.6,0,.8,.4); } 100% { transform: translateY(0); } }
+@keyframes tn-shadow { 0%, 100% { transform: scale(1); opacity: .25; } 50% { transform: scale(.55); opacity: .1; } }
+
+/* 오늘의 추천 강좌: 실제 데이터 한 장. 누르면 그 강좌가 있는 목록으로, 하트로 바로 담기 */
+.pick { position: relative; background: var(--surface); color: var(--ink); border-radius: 18px; box-shadow: 0 10px 28px rgba(0,0,0,.18); }
+.pick-go { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; padding: 14px 64px 14px 16px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; border-radius: 18px; min-height: 44px; }
+.pick-go:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.pick-tag { font-size: 13px; font-weight: 800; color: var(--blue-ink); }
+.pick-time { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+.pick-title { font-size: 16px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+.pick-meta { font-size: 14px; color: var(--muted); line-height: 1.4; }
+.pick-cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 14px; font-weight: 800; color: var(--blue-ink); }
+.pick .heart { position: absolute; right: 8px; top: 8px; }
+@media (prefers-reduced-motion: no-preference) { .pick-go.swap { animation: pick-in .35s ease-out; } @keyframes pick-in { from { opacity: 0; transform: translateY(6px); } } }
+.card.hit { animation: card-hit 1.6s ease-out; }
+@keyframes card-hit { 0% { box-shadow: 0 0 0 6px var(--lime); } 100% { box-shadow: 0 0 0 6px transparent; } }
+.sort-saved[aria-pressed="true"] { background: var(--lime); border-color: var(--lime-line); color: var(--on-lime); font-weight: 800; }
 .hero.compact .hero-art, .hero.compact .eyebrow, .hero.compact .hero-title { display: none; }
-/* 좁은 화면에서는 큰 그림 대신 제목 위의 얇은 수영장 띠로 보여 줌 (휴대폰 첫 화면에도 그림이 있게) */
+/* 좁은 화면: 검색 아래에 한 줄 폭으로. 레인 줄 높이는 손가락으로 누르기 좋게 유지 */
 @media (max-width: 1000px) {
-  .hero-art { order: -1; flex: 1 1 100%; min-height: 0; height: 132px; border-radius: 22px; }
-  .hero-art .fc, .hero-art .stats { display: none; }
+  .hero-art { flex: 1 1 100%; width: 100%; max-width: 560px; margin-inline: auto; }
 }
-.hero.compact .hero-art { display: none; }
+@media (max-width: 600px) {
+  .hero-art { --row: 52px; padding: 14px 12px 12px; border-radius: 22px; }
+  .lane { padding: 0 12px; }
+  .actor { right: 4px; }
+  .pick-time { font-size: 22px; }
+}
 @media (max-width: 760px) {
   .examples .ex:nth-of-type(n+3) { display: none; }
   .starter-tiles { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -12px; padding: 2px 12px 6px; }
@@ -605,18 +664,7 @@ body.has-tray { --tray-h: 76px; }
   .starter-tiles, .center-cards { padding-right: 36px; }
 }
 
-/* 좁은 화면 수영 띠: 폭이 넓어져도 수영하는 사람이 잘리지 않게 그림 배율을 고정하고 가운데에 맞춤 */
-@media (max-width: 1000px) {
-  .hero-art { width: 100%; max-width: 480px; margin-inline: auto; }
-  .pool-svg { inset: auto; left: 50%; top: 50%; width: 460px; height: 414px; max-width: none; transform: translate(-50%, -170px); }
-}
-@media (max-width: 600px) {
-  .hero-art { height: 112px; }
-  .eb-tail { display: none; }
-}
-/* 움직임 줄이기: 팔 두 개가 겹쳐 돛대처럼 보이지 않게 정지 자세 지정 */
-.sw-arm-a { transform: rotate(-60deg); }
-.sw-arm-b { transform: rotate(120deg); }
+@media (max-width: 600px) { .eb-tail { display: none; } }
 
 /* 담은 강좌 창 다듬기 */
 .sv-title .flag { display: block; width: max-content; margin: 4px 0 0; }

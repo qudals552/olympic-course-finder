@@ -17,6 +17,7 @@ import {
 } from "./filter";
 import { GUIDE_SPORTS, type GuideSport, LEVEL_LABEL, guideSport, recommend } from "./guide";
 import { ICON, sportIcon } from "./icons";
+import { type Scene, pickScene, SCENES } from "./scene";
 import { looksLikeSentence, parseSentence, sportVocabulary } from "./parse";
 import {
   CENTER_SHORT,
@@ -40,6 +41,7 @@ const PAGE = 24; // 한 번에 보이는 카드 수. 휴대폰에서 페이지�
 const EXAMPLES = ["퇴근 후 주 2회 초급 수영", "주말에 우리 아이 스케이트", "분당 화목 오전 요가 8만원 이하", "부모님 아쿠아로빅 월수금 오후", "새벽 6시 수영 월~금", "일산 저녁 배드민턴"];
 const PRICE_STEPS = [50000, 80000, 100000, 150000, 200000];
 const SAVE_KEY = "olympic-course-finder.saved";
+const SCENE_KEY = "olympic-course-finder.scene";
 const CENTER_REGION: Record<string, string> = {
   올림픽수영장: "서울 송파 · 올림픽공원",
   올림픽공원스포츠센터: "서울 송파 · 올림픽공원",
@@ -93,6 +95,7 @@ function storeSaved() {
   }
 }
 const savedCourses = () => saved.map((id) => byId.get(id)).filter((c): c is Course => !!c);
+const find = (q: Query) => search(data, q, saved);
 const infoOf = (c: Course) => (c.info !== null ? data.infos[c.info] : null);
 const linkOf = (c: Course) => infoOf(c)?.link ?? data.spmLink;
 
@@ -159,7 +162,7 @@ function revealResults(message?: string) {
 }
 
 /** "올림픽수영장 강좌 256개를 보여 드려요"처럼 방금 한 선택의 결과를 알려 줌 */
-const shownMessage = (label: string) => `${label} 강좌 ${search(data, query).length.toLocaleString("ko-KR")}개를 보여 드려요`;
+const shownMessage = (label: string) => `${label} 강좌 ${find(query).length.toLocaleString("ko-KR")}개를 보여 드려요`;
 
 // ---------- 그리기 ----------
 function render() {
@@ -254,7 +257,7 @@ function chip(label: string | Node, pressed: boolean, onClick: () => void, count
 }
 
 function counts(f: (c: Course) => string) {
-  const base = search(data, { ...query, centers: [], categories: [] });
+  const base = find({ ...query, centers: [], categories: [] });
   const m = new Map<string, number>();
   for (const c of base) m.set(f(c), (m.get(f(c)) ?? 0) + 1);
   return m;
@@ -325,7 +328,7 @@ const PILLS: PillDef[] = [
       };
       return [
         el("h3", {}, "정렬"),
-        el("div", { class: "chips" }, ...([["pick", "추천순"], ["time", "시작 시간순"], ["price", "수강료 낮은순"], ["center", "센터순"]] as const).map(([k, l]) => chip(l, query.sort === k, () => update({ sort: k })))),
+        el("div", { class: "chips" }, ...([["pick", "추천순"], ["time", "시작 시간순"], ["price", "수강료 낮은순"], ["center", "센터순"], ["saved", "담은 강좌 먼저"]] as const).map(([k, l]) => chip(l, query.sort === k, () => update({ sort: k })))),
         el("h3", { style: "margin-top: 14px" }, "함께 보기"),
         check(`오래된 강좌도 보기 (${data.recentFrom.replace("-", ".")} 이전 등록)`, !query.recentOnly, (v) => update({ recentOnly: !v })),
         check("개인·2인 레슨도 보기", query.includePrivate, (v) => update({ includePrivate: v })),
@@ -520,7 +523,7 @@ function timetable(items: Course[], perCell: number, withCenter = true, bars = f
 }
 
 function showCard(id: string) {
-  const res = search(data, query);
+  const res = find(query);
   const idx = res.findIndex((c) => c.id === id);
   if (idx < 0) return openSaved(); // 지금 조건에 없는 강좌(담은 강좌 막대)는 담은 강좌 목록에서 보여 줌
   view = "cards";
@@ -533,7 +536,7 @@ function showCard(id: string) {
 
 // ---------- 결과 ----------
 function renderResults() {
-  const res = search(data, query);
+  const res = find(query);
   const n = res.length;
   const filtered = queryTokens(query).length > 0;
   $("#count").replaceChildren(
@@ -585,7 +588,7 @@ function renderResults() {
   renderWeek(res);
 }
 
-function renderWeek(res = search(data, query)) {
+function renderWeek(res = find(query)) {
   const week = $("#week");
   week.hidden = false;
   const n = res.length;
@@ -688,10 +691,8 @@ function renderTray(bump = false) {
     badge.classList.add("bump");
   }
 
-  // 첫 화면 오른쪽 카드는 실제로 담은 수를 보여 줌
-  const fc = $("#fc-saved");
-  fc.querySelector("b")!.textContent = mine.length ? `담은 강좌 ${mine.length}개` : "하트로 담아 보세요";
-  fc.querySelector("small")!.textContent = !mine.length ? "시간이 겹치는지 알려 드려요" : ov.length ? `시간 겹침 ${ov.length}건` : "시간이 겹치지 않아요";
+  syncHearts();
+  syncSortSaved();
 
   tray.hidden = mine.length === 0;
   if (!mine.length) { document.body.style.removeProperty("--tray-h"); return tray.replaceChildren(); }
@@ -760,7 +761,7 @@ function openSaved() {
       go.addEventListener("click", () => {
         dlg.close();
         // 지금 조건에 맞는 강좌가 없으면 0건 화면으로 보내지 않고 조건을 풀어 줌
-        if (search(data, query).length === 0) update({ ...emptyQuery() });
+        if (find(query).length === 0) update({ ...emptyQuery() });
         revealResults();
       });
       const empty = el("div", { class: "sv-empty" },
@@ -926,7 +927,7 @@ function renderGuideResult() {
   meter.setAttribute("aria-label", `4단계 중 ${top}단계, ${LEVEL_LABEL[top]}`);
   meter.replaceChildren(...[1, 2, 3, 4].map((r) => el("span", { class: `${r <= top ? "done" : ""}${lv.includes(r) ? " here" : ""}` }, el("i"), LEVEL_LABEL[r])));
   const base = { ...emptyQuery(), sort: query.sort, ...guidePatch() };
-  const withLv = search(data, { ...base, levels: lv }).length;
+  const withLv = find({ ...base, levels: lv }).length;
   $("#guide-apply").textContent = withLv ? `이 수준 강좌 ${withLv}개 보기` : `${guideSport(gSport).label} 강좌 모두 보기`;
 }
 function openGuide(sport?: GuideSport) {
@@ -936,16 +937,136 @@ function openGuide(sport?: GuideSport) {
   $<HTMLDialogElement>("#guide").showModal();
 }
 
-// ---------- 숫자 올라가기 ----------
-function countUp(node: HTMLElement, to: number) {
-  if (reduceMotion()) { node.textContent = to.toLocaleString("ko-KR"); return; }
-  const t0 = performance.now();
-  const step = (t: number) => {
-    const k = Math.min(1, (t - t0) / 900);
-    node.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))).toLocaleString("ko-KR");
-    if (k < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
+// ---------- 첫 화면 장면(센터 레인 + 추천 강좌) ----------
+let heroScene: Scene = SCENES[0];
+let heroPicks: Course[] = [];
+let heroPickAt = 0;
+
+/** 담았는지가 바뀔 때마다 카드·추천의 하트를 한꺼번에 맞춤 */
+function syncHearts() {
+  for (const li of document.querySelectorAll<HTMLElement>("li.card[id^='c-']")) {
+    const on = saved.includes(li.id.slice(2));
+    li.classList.toggle("saved", on);
+    li.querySelector(".heart")?.setAttribute("aria-pressed", String(on));
+  }
+  const ph = document.querySelector<HTMLElement>("#pick .heart");
+  const cur = heroPicks[heroPickAt];
+  if (ph && cur) ph.setAttribute("aria-pressed", String(saved.includes(cur.id)));
+}
+
+/** 결과 머리말의 '담은 강좌 먼저' 버튼: 담은 개수를 보여 주고, 누르면 정렬을 바꿈 */
+function syncSortSaved() {
+  const b = document.querySelector<HTMLButtonElement>("#sort-saved");
+  if (!b) return;
+  const n = savedCourses().length;
+  b.hidden = n === 0 && query.sort !== "saved";
+  b.setAttribute("aria-pressed", String(query.sort === "saved"));
+  $("#sort-saved-label").textContent = `담은 강좌 먼저 · ${n}개`;
+}
+
+function pickShowcase(sc: Scene): Course[] {
+  const res = find({ ...emptyQuery(), sort: "pick" });
+  const nice = (c: Course) => !c.allDay && c.start !== null && c.price !== null && (c.levelRank === null || c.levelRank <= 2);
+  const evening = (c: Course) => { const m = toMinutes(c.start); return m !== null && m >= 17 * 60 && m < 21 * 60; };
+  const pool = [
+    ...res.filter((c) => c.category === sc.category && nice(c) && evening(c)),
+    ...res.filter((c) => c.category === sc.category && nice(c)),
+    ...res.filter((c) => nice(c) && evening(c)),
+  ];
+  // 같은 센터·같은 이름이 겹치지 않게 최대 3장, 시작할 때마다 다른 조합
+  const seen = new Set<string>();
+  const out: Course[] = [];
+  const head = pool.slice(0, 14).sort(() => Math.random() - 0.5);
+  for (const c of [...head, ...pool.slice(14)]) {
+    const k = `${c.center}|${prettyTitle(c.name)}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(c);
+    if (out.length === 3) break;
+  }
+  return out;
+}
+
+function goToCourse(c: Course) {
+  update({ ...emptyQuery(), sort: query.sort === "saved" ? "saved" : "pick", centers: [c.center], categories: [c.category] }, { push: true });
+  revealResults();
+  // 결과가 그려진 뒤, 그 강좌가 목록에 있으면 그 카드로 이동해 잠깐 강조
+  setTimeout(() => {
+    const li = document.getElementById(`c-${c.id}`);
+    if (!li) return;
+    li.focus();
+    li.classList.remove("hit");
+    void li.offsetWidth;
+    li.classList.add("hit");
+  }, 260);
+}
+
+function renderPick(swap = false) {
+  const box = $("#pick");
+  const c = heroPicks[heroPickAt];
+  box.hidden = !c;
+  if (!c) return box.replaceChildren();
+  const title = prettyTitle(c.name);
+  const go = el("button", { type: "button", class: "pick-go", "aria-label": `${CENTER_SHORT[c.center] ?? c.center} ${title}, ${daysLabel(c.days)} ${c.start} 시작. 눌러서 목록에서 보기` },
+    el("span", { class: "pick-tag" }, `오늘의 추천 · ${c.category}`),
+    el("span", { class: "pick-time num" }, `${daysLabel(c.days)} ${c.start}`),
+    el("span", { class: "pick-title" }, title),
+    el("span", { class: "pick-meta" }, `${CENTER_SHORT[c.center] ?? c.center} · 한 달 ${won(c.price)}원`),
+    el("span", { class: "pick-cta" }, "목록에서 보기", svg(ICON.arrow)));
+  if (swap && !reduceMotion()) go.classList.add("swap");
+  go.addEventListener("click", () => goToCourse(c));
+  box.replaceChildren(go, heartButton(c, title));
+}
+
+function renderHero() {
+  const art = $("#hero-art");
+  let prev: string | null = null;
+  try { prev = localStorage.getItem(SCENE_KEY); } catch { /* 저장이 막혀도 그냥 무작위 */ }
+  // 주소에 ?scene=skate 처럼 적으면 그 장면을 고정(확인용)
+  const forced = new URLSearchParams(location.search).get("scene");
+  heroScene = SCENES.find((s) => s.id === forced) ?? pickScene(prev);
+  try { localStorage.setItem(SCENE_KEY, heroScene.id); } catch { /* 무시 */ }
+  art.classList.add(`scene-${heroScene.id}`);
+  $("#art-cap").textContent = heroScene.caption;
+  $("#actor").innerHTML = heroScene.actor;
+
+  const lanes = Object.keys(CENTER_SHORT);
+  const all = find({ ...emptyQuery() });
+  const setLane = (i: number) => art.style.setProperty("--lane", String(i));
+  setLane(0);
+  $("#lanes").replaceChildren(...lanes.map((center, i) => {
+    const n = all.filter((c) => c.center === center).length;
+    const b = el("button", { type: "button", class: "lane", "aria-label": `${CENTER_SHORT[center]} 강좌 ${n}개 보기` },
+      el("span", { class: "lane-name" }, CENTER_SHORT[center] ?? center),
+      el("span", { class: "lane-n num" }, `${n.toLocaleString("ko-KR")}개`),
+      el("span", { class: "lane-go", "aria-hidden": "true" }, svg(ICON.arrow)));
+    b.addEventListener("pointerenter", () => setLane(i));
+    b.addEventListener("focus", () => setLane(i));
+    b.addEventListener("click", () => {
+      setLane(i);
+      // 그림이 그 레인으로 헤엄쳐 가는 것을 잠깐 보여 준 뒤 이동(움직임 줄이기 설정이면 바로)
+      setTimeout(() => {
+        update({ centers: [center] }, { push: true });
+        revealResults(shownMessage(CENTER_SHORT[center] ?? center));
+      }, reduceMotion() ? 0 : 320);
+    });
+    return el("li", {}, b);
+  }));
+
+  heroPicks = pickShowcase(heroScene);
+  heroPickAt = 0;
+  renderPick();
+  const box = $("#pick");
+  let hold = false;
+  for (const ev of ["pointerenter", "focusin"]) box.addEventListener(ev, () => { hold = true; });
+  for (const ev of ["pointerleave", "focusout"]) box.addEventListener(ev, () => { hold = false; });
+  if (heroPicks.length > 1 && !reduceMotion()) {
+    window.setInterval(() => {
+      if (hold || document.hidden || art.offsetParent === null) return;
+      heroPickAt = (heroPickAt + 1) % heroPicks.length;
+      renderPick(true);
+    }, 6000);
+  }
 }
 
 // ---------- 시작 ----------
@@ -957,8 +1078,6 @@ async function init() {
   vocab = sportVocabulary([...new Set(data.courses.map((c) => c.sport))]);
   saved = saved.filter((id) => byId.has(id));
   $("#source").textContent = `데이터: ${data.source}. 공공데이터포털(data.go.kr), 이용허락범위 제한 없음.`;
-  countUp($("#stat-courses"), data.courses.length);
-  countUp($("#stat-cats"), new Set(data.courses.map((c) => c.category).filter((c) => c !== "기타")).size);
 
   $("#search-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1080,7 +1199,7 @@ async function init() {
     const lv = recommend(gSport, gChecked);
     const s = guideSport(gSport);
     const base = { ...emptyQuery(), sort: query.sort, ...guidePatch() };
-    const hasLv = search(data, { ...base, levels: lv }).length > 0;
+    const hasLv = find({ ...base, levels: lv }).length > 0;
     $<HTMLDialogElement>("#guide").close();
     lastNote = hasLv
       ? `수준 안내 결과(${lv.map((n) => LEVEL_LABEL[n]).join("·")})로 ${s.label} 강좌를 찾았어요.`
@@ -1090,6 +1209,11 @@ async function init() {
   });
 
   rotatePlaceholder();
+  renderHero();
+  $("#sort-saved").addEventListener("click", () => {
+    update({ sort: query.sort === "saved" ? "pick" : "saved" });
+    toast(query.sort === "saved" ? "담은 강좌를 맨 앞에 보여 드려요" : "추천순으로 돌아갔어요");
+  });
   render();
   // 다 그린 다음 수영 장면을 움직임 (그리는 동안 시작하면 끊겨 보임)
   setTimeout(() => document.querySelector(".hero-art")?.classList.add("run"), 700);

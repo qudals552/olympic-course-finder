@@ -68,7 +68,7 @@ export const TARGET_ALSO: Record<string, string[]> = {
 };
 const targetOk = (c: Course, t: string) => (TARGET_ALSO[t] ?? [t]).some((x) => c.targets.includes(x));
 
-export type SortKey = "pick" | "time" | "price" | "center";
+export type SortKey = "pick" | "time" | "price" | "center" | "saved";
 
 export interface Query {
   text: string;
@@ -170,14 +170,20 @@ export function pickPenalty(c: Course, timesChosen = false): number {
   return n;
 }
 
-export function search(data: Dataset, q: Query): Course[] {
+/** savedIds: 담은 강좌 아이디(담은 순서). 정렬이 "담은 강좌 먼저"일 때만 쓰며, 나중에 담은 것이 앞에 옴 */
+export function search(data: Dataset, q: Query, savedIds: string[] = []): Course[] {
   const out = data.courses.filter((c) => matches(c, q));
   const t = (c: Course) => toMinutes(c.start) ?? 9999;
   const p = (c: Course) => c.price ?? Number.MAX_SAFE_INTEGER;
   // 고른 대상과 정확히 맞는 강좌를 먼저
   const exact = (c: Course) => (q.target && !c.targets.includes(q.target) ? 1 : 0);
+  const rank = new Map(savedIds.map((id, i) => [id, i]));
+  const sv = (c: Course) => -(rank.get(c.id) ?? -Infinity);
   out.sort((a, b) => {
     if (exact(a) !== exact(b)) return exact(a) - exact(b);
+    if (q.sort === "saved") {
+      return sv(a) - sv(b) || pickPenalty(a, q.times.length > 0) - pickPenalty(b, q.times.length > 0) || t(a) - t(b) || p(a) - p(b);
+    }
     if (q.sort === "price") return p(a) - p(b) || t(a) - t(b);
     if (q.sort === "center") return a.center.localeCompare(b.center, "ko") || t(a) - t(b);
     if (q.sort === "pick") return pickPenalty(a, q.times.length > 0) - pickPenalty(b, q.times.length > 0) || t(a) - t(b) || p(a) - p(b);
@@ -241,6 +247,6 @@ export function decodeQuery(s: string): Query {
   q.includePrivate = p.get("pv") === "1";
   q.includePaused = p.get("ps") === "1";
   const s2 = p.get("s");
-  if (s2 === "price" || s2 === "center" || s2 === "time" || s2 === "pick") q.sort = s2;
+  if (s2 === "price" || s2 === "center" || s2 === "time" || s2 === "pick" || s2 === "saved") q.sort = s2;
   return q;
 }
