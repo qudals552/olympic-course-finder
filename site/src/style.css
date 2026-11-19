@@ -360,23 +360,23 @@ button { cursor: pointer; }
 .search-ico { color: var(--muted); margin-left: 4px; flex: none; }
 /* 첫 화면 오른쪽 장면: 4개 레인 = 4개 센터(누르면 그 센터 강좌), 아래는 실제 강좌 한 장. 종목 장면은 새로고침마다 바뀜 */
 .hero-art {
-  --a-bg1: #3f70ff; --a-bg2: #1f45c8; --a-line: #ddf57a; --row: 58px;
+  --a-bg1: #2b55d6; --a-bg2: #1a3aa8; --a-line: #ddf57a; --row: 58px;
   flex: 1 1 360px; align-self: flex-start; position: relative; border-radius: 28px; overflow: hidden; color: #fff;
   background: linear-gradient(165deg, var(--a-bg1) 0%, var(--a-bg2) 100%);
   padding: 16px 14px 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0;
 }
-.scene-skate { --a-bg1: #2f86c4; --a-bg2: #1b5a91; --a-line: #e6f6ff; }
-.scene-run { --a-bg1: #d4552f; --a-bg2: #a23a1b; --a-line: #ffe3d2; }
-.scene-tennis { --a-bg1: #27934f; --a-bg2: #15653a; --a-line: #f4fbd0; }
+.scene-skate { --a-bg1: #1f6aa3; --a-bg2: #17507f; --a-line: #e6f6ff; }
+.scene-run { --a-bg1: #b8431f; --a-bg2: #8e3016; --a-line: #ffe3d2; }
+.scene-tennis { --a-bg1: #1a7040; --a-bg2: #11552f; --a-line: #f4fbd0; }
 .art-cap { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; }
 .lanes-wrap { position: relative; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.1); }
 .lanes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .lane { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; height: var(--row); padding: 0 14px; border: 0; border-radius: 0; background: transparent; color: #fff; font: inherit; text-align: left; cursor: pointer; overflow: hidden; }
 .lanes li + li .lane::before { content: ""; position: absolute; left: 0; top: 0; width: 200%; height: 3px; background: repeating-linear-gradient(90deg, var(--a-line) 0 14px, transparent 14px 26px); opacity: .7; }
-.lane:hover, .lane:focus-visible, .lane.on { background: rgba(255,255,255,.16); }
+.lane:hover, .lane:focus-visible, .lane.on { background: rgba(0,0,0,.18); } /* 흰 글자 대비가 줄지 않게 밝히지 않고 어둡게 */
 .lane:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
 .lane-name { position: relative; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
-.lane-n { position: relative; font-size: 14px; font-weight: 700; opacity: .92; white-space: nowrap; }
+.lane-n { position: relative; font-size: 14px; font-weight: 700; white-space: nowrap; }
 .lane-go { position: relative; opacity: .55; transition: opacity .15s; flex: none; }
 .lane:hover .lane-go, .lane:focus-visible .lane-go { opacity: 1; }
 @media (hover: none) { .lane-go { opacity: .9; } }
@@ -639,8 +639,8 @@ body.has-tray { --tray-h: 76px; }
 .sv-heart::before { color: var(--on-lime); }
 
 /* 알림은 위쪽 가운데에 짧게: 카드의 가격·버튼을 덮지 않음 */
-.toast { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; }
-@media (min-width: 841px) { .toast { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; } }
+.toast { top: calc(72px + env(safe-area-inset-top, 0px)); bottom: auto; }
+@media (min-width: 841px) { .toast { top: calc(72px + env(safe-area-inset-top, 0px)); bottom: auto; } }
 
 /* 맨 위로 버튼: 하단 바와 겹치는 폭(841~899px)에서는 바 위로 쌓음 */
 @media (min-width: 841px) and (max-width: 899px) { body.has-tray .to-top { bottom: calc(var(--safe-b) + 16px + var(--tray-h)); } }
