@@ -1180,8 +1180,15 @@ async function init() {
           ($("#popover").querySelector("button") as HTMLElement | null)?.focus();
         }
       } else if (id === "centers") {
-        // 센터 고르기는 첫 화면의 센터 레인이 맡음
-        goTo("hero-art");
+        // 센터 고르기는 첫 화면의 센터 레인이 맡음. 이미 보이는 자리라 화면이 안 움직여도 눌렀다는 것을 알 수 있게 레인을 반짝임
+        const art = $("#hero-art");
+        const top = art.getBoundingClientRect().top + scrollY - headerBar() - 12;
+        scrollToY(art.offsetParent === null ? 0 : top);
+        art.querySelector<HTMLElement>(".lane")?.focus({ preventScroll: true });
+        art.classList.remove("ping");
+        void art.offsetWidth;
+        art.classList.add("ping");
+        setTimeout(() => art.classList.remove("ping"), 1400);
       } else {
         goTo(id);
       }
