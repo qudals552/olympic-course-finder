@@ -76,10 +76,18 @@
     </div>
 
     <main id="results" class="wrap results" tabindex="-1">
+      <section id="discover" class="discover" hidden>
+        <div class="disc-block">
+          <h2 class="disc-title">어떤 운동을 찾으세요?</h2>
+          <div id="starter-tiles" class="starter-tiles"></div>
+        </div>
+      </section>
+
       <div class="result-head">
         <div>
           <h2 id="count" tabindex="-1" aria-live="polite">강좌를 불러오는 중이에요</h2>
           <p id="count-note" class="note" hidden></p>
+          <p id="apply-note" class="note apply-note">신청은 카드의 ‘종목 공식 페이지’에서 해요. ‘이름 복사’로 강좌 이름을 복사해 붙여 넣으면 찾기 쉬워요.</p>
         </div>
         <div class="head-side">
           <p class="legend" aria-label="요일 표시 설명">
@@ -107,14 +115,6 @@
         </div>
       </div>
       <div id="relax" class="relax" role="note" hidden></div>
-
-      <section id="discover" class="discover" hidden>
-        <div class="disc-block">
-          <h2 class="disc-title">어떤 운동을 찾으세요?</h2>
-          <div id="starter-tiles" class="starter-tiles"></div>
-        </div>
-        <h2 class="disc-title">전체 강좌</h2>
-      </section>
 
       <div class="result-body">
         <div class="result-main">

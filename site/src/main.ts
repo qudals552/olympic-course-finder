@@ -962,10 +962,14 @@ function syncSortSaved() {
   sel.value = query.sort;
 }
 
+const isEvening = (c: Course) => { const m = toMinutes(c.start); return m !== null && m >= 17 * 60 && m < 21 * 60; };
+
 function pickShowcase(sc: Scene): Course[] {
   const res = find({ ...emptyQuery(), sort: "pick" });
-  const nice = (c: Course) => !c.allDay && c.start !== null && c.price !== null && (c.levelRank === null || c.levelRank <= 2);
-  const evening = (c: Course) => { const m = toMinutes(c.start); return m !== null && m >= 17 * 60 && m < 21 * 60; };
+  // 처음 보는 사람에게 보여 줄 만한 강좌만: 자유 이용·시간 없음 제외, 이름에 슬래시·층수 같은 내부 표기가 없고 짧은 것
+  const tidy = (c: Course) => { const t = prettyTitle(c.name); return !t.includes("/") && t.length <= 22; };
+  const nice = (c: Course) => !c.allDay && c.start !== null && c.price !== null && tidy(c) && (c.levelRank === null || c.levelRank <= 2);
+  const evening = isEvening;
   const pool = [
     ...res.filter((c) => c.category === sc.category && nice(c) && evening(c)),
     ...res.filter((c) => c.category === sc.category && nice(c)),
@@ -980,7 +984,7 @@ function pickShowcase(sc: Scene): Course[] {
     if (seen.has(k)) continue;
     seen.add(k);
     out.push(c);
-    if (out.length === 3) break;
+    if (out.length === 1) break; // 자동으로 바꾸지 않으므로 하나면 충분
   }
   return out;
 }
@@ -999,19 +1003,19 @@ function goToCourse(c: Course) {
   }, 260);
 }
 
-function renderPick(swap = false) {
+function renderPick() {
   const box = $("#pick");
   const c = heroPicks[heroPickAt];
   box.hidden = !c;
   if (!c) return box.replaceChildren();
   const title = prettyTitle(c.name);
   const go = el("button", { type: "button", class: "pick-go", "aria-label": `${CENTER_SHORT[c.center] ?? c.center} ${title}, ${daysLabel(c.days)} ${c.start} 시작. 눌러서 목록에서 보기` },
-    el("span", { class: "pick-tag" }, `오늘의 추천 · ${c.category}`),
+    el("span", { class: "pick-tag" }, "오늘의 추천"),
+    el("span", { class: "pick-basis" }, `${c.category} · ${isEvening(c) ? "저녁 시간대" : "낮 시간대"} 강좌 중 무작위로 골랐어요`),
     el("span", { class: "pick-time num" }, `${daysLabel(c.days)} ${c.start}`),
     el("span", { class: "pick-title" }, title),
     el("span", { class: "pick-meta" }, `${CENTER_SHORT[c.center] ?? c.center} · 한 달 ${won(c.price)}원`),
     el("span", { class: "pick-cta" }, "목록에서 보기", svg(ICON.arrow)));
-  if (swap && !reduceMotion()) go.classList.add("swap");
   go.addEventListener("click", () => goToCourse(c));
   box.replaceChildren(go, heartButton(c, title));
 }
@@ -1054,17 +1058,6 @@ function renderHero() {
   heroPicks = pickShowcase(heroScene);
   heroPickAt = 0;
   renderPick();
-  const box = $("#pick");
-  let hold = false;
-  for (const ev of ["pointerenter", "focusin"]) box.addEventListener(ev, () => { hold = true; });
-  for (const ev of ["pointerleave", "focusout"]) box.addEventListener(ev, () => { hold = false; });
-  if (heroPicks.length > 1 && !reduceMotion()) {
-    window.setInterval(() => {
-      if (hold || document.hidden || art.offsetParent === null) return;
-      heroPickAt = (heroPickAt + 1) % heroPicks.length;
-      renderPick(true);
-    }, 6000);
-  }
 }
 
 // ---------- 시작 ----------
