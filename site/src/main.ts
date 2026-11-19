@@ -1188,7 +1188,8 @@ async function init() {
         art.classList.remove("ping");
         void art.offsetWidth;
         art.classList.add("ping");
-        setTimeout(() => art.classList.remove("ping"), 1400);
+        setTimeout(() => art.classList.remove("ping"), 2200);
+        toast("센터 레인 중 하나를 눌러 보세요");
       } else {
         goTo(id);
       }

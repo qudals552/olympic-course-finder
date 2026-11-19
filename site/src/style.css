@@ -734,6 +734,16 @@ body:has(dialog[open]) { overflow: hidden; }
   .starter-tile .st-ico { transform: scale(0.85); transform-origin: left top; }
 }
 
-/* '센터 둘러보기' 메뉴를 눌렀을 때 센터 레인을 잠깐 반짝여 알려 줌 */
-.hero-art.ping .lanes-wrap { animation: lane-ping 1.3s ease-out; }
-@keyframes lane-ping { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.95); } 70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
+/* '센터 둘러보기' 메뉴를 눌렀을 때: 패널에 라임색 테두리가 두 번 번쩍이고, 4개 레인이 위에서 아래로 차례로 밝아져 '여기를 고르세요'가 보이게 함 */
+.hero-art.ping { outline: 4px solid var(--lime); outline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-art.ping { outline: 0; animation: art-ring 1.1s ease-out 2; }
+  .hero-art.ping .lanes-wrap { animation: lane-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .hero-art.ping .lanes li .lane { animation: lane-flash 0.9s ease-out both; }
+  .hero-art.ping .lanes li:nth-child(2) .lane { animation-delay: 0.14s; }
+  .hero-art.ping .lanes li:nth-child(3) .lane { animation-delay: 0.28s; }
+  .hero-art.ping .lanes li:nth-child(4) .lane { animation-delay: 0.42s; }
+}
+@keyframes art-ring { 0% { box-shadow: 0 0 0 0 rgba(221, 245, 122, 0.95); } 100% { box-shadow: 0 0 0 16px rgba(221, 245, 122, 0); } }
+@keyframes lane-pop { 0% { transform: scale(0.97); } 100% { transform: scale(1); } }
+@keyframes lane-flash { 0% { background: rgba(221, 245, 122, 0.85); color: #1a1f26; } 100% { background: transparent; } }
