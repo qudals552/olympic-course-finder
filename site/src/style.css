@@ -375,18 +375,20 @@ button { cursor: pointer; }
 .sw-arm { transform-box: view-box; transform-origin: 232px 154px; }
 .sw-leg { transform-box: view-box; transform-origin: 184px 160px; }
 .sw-bob { transform-box: view-box; transform-origin: 212px 158px; }
+/* 첫 화면에서 데이터를 읽고 그리는 동안은 움직이지 않다가(끊겨 보임), 다 그린 뒤 .run이 붙으면 시작함 */
 @media (prefers-reduced-motion: no-preference) {
-  .ln { animation: ln-flow 1s linear infinite; }
-  .rp1 { animation: rp-flow 3.2s linear infinite; }
-  .rp2 { animation: rp-flow 4.8s linear infinite; }
-  .sw-water { animation: water-sway 3.2s ease-in-out infinite; }
-  .sw-bob { animation: sw-bob 3.2s ease-in-out infinite; }
-  .sw-arm-a { animation: sw-arm 1.6s linear infinite; }
-  .sw-arm-b { animation: sw-arm 1.6s linear infinite -0.8s; }
-  .sw-leg-a { animation: sw-kick .36s ease-in-out infinite alternate; }
-  .sw-leg-b { animation: sw-kick .36s ease-in-out infinite alternate-reverse; }
-  .sw-drop-a { animation: sw-drop 1.6s ease-out infinite; }
-  .sw-drop-b { animation: sw-drop 1.6s ease-out infinite .6s; }
+  .sw-arm, .sw-leg, .sw-bob, .sw-water, .rp, .sw-drop { will-change: transform; }
+  .run .ln { animation: ln-flow 1s linear infinite; }
+  .run .rp1 { animation: rp-flow 3.2s linear infinite; }
+  .run .rp2 { animation: rp-flow 4.8s linear infinite; }
+  .run .sw-water { animation: water-sway 3.2s ease-in-out infinite; }
+  .run .sw-bob { animation: sw-bob 3.2s ease-in-out infinite; }
+  .run .sw-arm-a { animation: sw-arm 1.8s linear infinite; }
+  .run .sw-arm-b { animation: sw-arm 1.8s linear infinite -0.9s; }
+  .run .sw-leg-a { animation: sw-kick .5s ease-in-out infinite alternate; }
+  .run .sw-leg-b { animation: sw-kick .5s ease-in-out infinite alternate-reverse; }
+  .run .sw-drop-a { animation: sw-drop 1.8s ease-in-out infinite; }
+  .run .sw-drop-b { animation: sw-drop 1.8s ease-in-out infinite .9s; }
 }
 @keyframes ln-flow { to { stroke-dashoffset: -26; } }
 @keyframes rp-flow { to { transform: translateX(100px); } }
@@ -394,7 +396,7 @@ button { cursor: pointer; }
 @keyframes sw-bob { 50% { transform: translateY(-4px) rotate(-2deg); } }
 @keyframes sw-arm { to { transform: rotate(360deg); } }
 @keyframes sw-kick { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
-@keyframes sw-drop { 0% { transform: translate(0, 0); opacity: .85; } 100% { transform: translate(-16px, -10px); opacity: 0; } }
+@keyframes sw-drop { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: .85; } 100% { transform: translate(-16px, -10px); opacity: 0; } }
 .fc { position: absolute; background: var(--surface); color: var(--ink); border-radius: 16px; padding: 10px 14px; box-shadow: 0 10px 28px rgba(0,0,0,.18); display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
 .fc small { color: var(--muted); font-size: 12px; }
 .fc .num { font-size: 22px; font-weight: 700; }

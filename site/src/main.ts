@@ -1091,6 +1091,8 @@ async function init() {
 
   rotatePlaceholder();
   render();
+  // 다 그린 다음 수영 장면을 움직임 (그리는 동안 시작하면 끊겨 보임)
+  setTimeout(() => document.querySelector(".hero-art")?.classList.add("run"), 700);
 
   // 공유 링크로 들어왔으면 받은 후보를 보여 주고, 주소에서는 공유 표시를 지워 새로고침해도 다시 뜨지 않게 함
   const shared = decodeShare(location.hash);
@@ -1103,6 +1105,7 @@ async function init() {
 
 init().catch((e) => {
   console.error(e);
+  document.querySelector(".hero-art")?.classList.add("run");
   $("#count").textContent = "강좌 데이터를 불러오지 못했어요";
   const retry = el("button", { type: "button", class: "btn-primary" }, "다시 불러오기");
   retry.addEventListener("click", () => location.reload());
